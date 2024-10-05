@@ -3,6 +3,7 @@ const os = require("os");
 const path = require("path");
 const process = require("process");
 const https = require("https");
+const url = require("url");
 const execSync = require("child_process").execSync;
 const spawnSync = require("child_process").spawnSync;
 
@@ -60,10 +61,10 @@ if (
 
 const database = process.env["INPUT_DATABASE"];
 
-const input_downloaddir = process.env["INPUT_DOWNLOADDIR"];
-const input_mirror = process.env["INPUT_MIRROR"]; // Defaults to https://dlm.mariadb.com
+const input_downloaddir = process.env["INPUT_DOWNLOADDIR"] || ".cache/mariadb";
+const input_mirror = process.env["INPUT_MIRROR"] || "https://dlm.mariadb.com"; // Defaults to https://dlm.mariadb.com
 // Get options added at the end fo the url ("...?<OPTIONS>)
-const input_download_getopt = process.env["INPUT_DOWNLOAD_GETOPT"];
+const input_download_getopt = process.env["INPUT_DOWNLOAD_GETOPT"] || "";
 
 // Final value for mirror
 const mirror = input_mirror;
@@ -78,7 +79,9 @@ if (input_download_getopt !== "") {
 const downloadDirPath = path.parse(input_downloaddir);
 const dirParts = downloadDirPath.dir.split(/[\\/]/);
 downloadDirPath.dir = dirParts.length > 0 ? path.join(...dirParts) : ".";
-const downloaddir = path.format(downloadDirPath);
+const downloaddir = path.isAbsolute(path.format(downloadDirPath))
+  ? path.format(downloadDirPath)
+  : path.join(process.cwd(), path.format(downloadDirPath));
 
 let bin;
 
@@ -116,19 +119,30 @@ if (isMac()) {
   // Ensure that '$downloaddir' exists
   if (!fs.existsSync(downloaddir)) {
     fs.mkdirSync(downloaddir, { recursive: true });
+    const absolutePath = fs.realpathSync(downloaddir);
   }
+  console.log(`Target path is ${targetPath}`);
   if (!fs.existsSync(targetPath)) {
-    const url = `${mirror}/MariaDB/mariadb-${fullVersion}/winx64-packages/mariadb-${fullVersion}-winx64.msi${get_opt}`;
-    if (true) {
-      console.log(`Download from of ${url} to ${targetPath}.`);
-      // Download file via JS
+    const download_url = `${mirror}/MariaDB/mariadb-${fullVersion}/winx64-packages/mariadb-${fullVersion}-winx64.msi${get_opt}`;
+    if (false) {
+      // This method uses the https module, but it's not working
+      const urlObj = url.parse(download_url);
+      const options = {
+        hostname: urlObj.hostname,
+        path: urlObj.pathname,
+        port: urlObj.port,
+        method: "GET",
+      };
+
+      // Create a write stream to save the downloaded file
       const file = fs.createWriteStream(targetPath);
-      https.get(url, function (response) {
+      https.get(options, function (response) {
+        console.log(response);
         response.pipe(file);
       });
     } else {
       run(
-        `curl -Ls --user-agent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:89.0) Gecko/20100101 Firefox/89.0" -o "${targetPath}" '${url}'`,
+        `curl -Ls --user-agent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:89.0) Gecko/20100101 Firefox/89.0" -o "${targetPath}" "${download_url}"`,
       );
     }
   }
