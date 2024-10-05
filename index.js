@@ -129,7 +129,7 @@ if (isMac()) {
       .get(url, function (response) {
         response.pipe(file);
       })
-      .on("error", err => {
+      .on("error", (err) => {
         console.log("Error: " + err.message);
       });
   }
