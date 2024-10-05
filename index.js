@@ -125,7 +125,7 @@ if (isMac()) {
     // Download file via JS
     const url = `${mirror}/MariaDB/mariadb-${fullVersion}/winx64-packages/mariadb-${fullVersion}-winx64.msi`;
     const file = fs.createWriteStream(targetPath);
-    https.get(url, function(response) {
+    https.get(url, function (response) {
       response.pipe(file);
     });
   }
