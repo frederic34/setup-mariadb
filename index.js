@@ -48,16 +48,37 @@ function formulaPresent(formula) {
 }
 
 // latest LTS release
-const defaultVersion = "10.11";
+const defaultVersion = "11.4";
 const mariadbVersion = process.env["INPUT_MARIADB-VERSION"] || defaultVersion;
 
+// only add LTS releases going forward
 if (
-  !["11.2", "11.1", "11.0", "10.11", "10.6", "10.5"].includes(mariadbVersion)
+  !["11.4", "11.2", "11.1", "10.11", "10.6", "10.5"].includes(mariadbVersion)
 ) {
   throw "Invalid MariaDB version: " + mariadbVersion;
 }
 
 const database = process.env["INPUT_DATABASE"];
+
+const input_downloaddir = process.env["INPUT_DOWNLOADDIR"];
+const input_mirror = process.env["INPUT_MIRROR"]; // Defaults to https://dlm.mariadb.com
+// Get options added at the end fo the url ("...?<OPTIONS>)
+const input_download_getopt = process.env["INPUT_DOWNLOAD_GETOPT"];
+
+// Final value for mirror
+const mirror = input_mirror;
+
+if (input_download_getopt !== "") {
+  get_opt = `?${input_download_getopt}`;
+} else {
+  get_opt = "";
+}
+
+// Convert downloaddir to a System Path (e.g., '/' to '\\' on windows
+const downloadDirPath = path.parse(input_downloaddir);
+const dirParts = downloadDirPath.dir.split(/[\\/]/);
+downloadDirPath.dir = dirParts.length > 0 ? path.join(...dirParts) : ".";
+const downloaddir = path.format(downloadDirPath);
 
 let bin;
 
@@ -76,19 +97,12 @@ if (isMac()) {
   run(`${bin}/mysql.server start`);
 
   addToPath(bin);
-
-  // add permissions
-  if (mariadbVersion == "10.3") {
-    run(
-      `${bin}/mysql -u root -e "GRANT ALL PRIVILEGES ON *.* TO ''@'localhost'"`,
-    );
-    run(`${bin}/mysql -u root -e "FLUSH PRIVILEGES"`);
-  }
 } else if (isWindows()) {
   // install
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "mariadb-"));
   process.chdir(tmpDir);
   const versionMap = {
+    11.4: "11.4.3",
     11.2: "11.2.2",
     11.1: "11.1.2",
     "11.0": "11.0.4",
@@ -97,14 +111,29 @@ if (isMac()) {
     10.5: "10.5.23",
   };
   const fullVersion = versionMap[mariadbVersion];
-  // Download file via JS
-  const url = `https://downloads.mariadb.com/MariaDB/mariadb-${fullVersion}/winx64-packages/mariadb-${fullVersion}-winx64.msi`;
-  const file = fs.createWriteStream("mariadb.msi");
-  https.get(url, function (response) {
-    response.pipe(file);
-  });
+  const targetPath = path.join(downloaddir, `mariadb-${fullVersion}.msi`);
 
-  run(`msiexec /i mariadb.msi SERVICENAME=MariaDB /qn`);
+  // Ensure that '$downloaddir' exists
+  if (!fs.existsSync(downloaddir)) {
+    fs.mkdirSync(downloaddir, { recursive: true });
+  }
+  bin = `${downloaddir}\\mariadb-${fullVersion}.msi`;
+  if (!fs.existsSync(targetPath)) {
+    const url = `${mirror}/MariaDB/mariadb-${fullVersion}/winx64-packages/mariadb-${fullVersion}-winx64.msi${get_opt}`;
+    if (true) {
+      // Download file via JS
+      const file = fs.createWriteStream(targetPath);
+      https.get(url, function (response) {
+        response.pipe(file);
+      });
+    } else {
+      run(
+        `curl -Ls --user-agent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:89.0) Gecko/20100101 Firefox/89.0" -o "${targetPath}" '${url}`,
+      );
+    }
+  }
+  // run(`msiexec /i mariadb.msi SERVICENAME=MariaDB /qn`);
+  run(`msiexec /i "${targetPath}" SERVICENAME=MariaDB /qn`);
 
   bin = `C:\\Program Files\\MariaDB ${mariadbVersion}\\bin`;
   addToPath(bin);
@@ -119,7 +148,7 @@ if (isMac()) {
   run(`"${bin}\\mysql" -u root -e "FLUSH PRIVILEGES"`);
 } else {
   const image = process.env["ImageOS"];
-  if (image == "ubuntu20" || image == "ubuntu22") {
+  if (image == "ubuntu20" || image == "ubuntu22" || image == "ubuntu24") {
     // clear previous data
     run(`sudo systemctl stop mysql.service`);
     run(`sudo rm -rf /var/lib/mysql`);
@@ -130,17 +159,12 @@ if (isMac()) {
     `sudo apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xF1656F24C74CD1D8`,
   );
   run(
-    `echo "deb https://downloads.mariadb.com/MariaDB/mariadb-${mariadbVersion}/repo/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) main" | sudo tee /etc/apt/sources.list.d/mariadb.list`,
+    `echo "deb [arch=amd64,arm64] ${mirror}/repo/mariadb-server/${mariadbVersion}/repo/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) main" | sudo tee /etc/apt/sources.list.d/mariadb.list`,
   );
   run(
     `sudo apt-get update -o Dir::Etc::sourcelist="sources.list.d/mariadb.list" -o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0"`,
   );
-  const package_list = ["11.2", "11.1", "11.0", "10.11"].includes(
-    mariadbVersion,
-  )
-    ? `mariadb-server`
-    : `mariadb-server-${mariadbVersion}`;
-  run(`sudo apt-get install ${package_list}`);
+  run(`sudo apt-get install mariadb-server`);
 
   // start
   run(`sudo systemctl start mariadb`);
