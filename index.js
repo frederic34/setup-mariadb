@@ -2,7 +2,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const process = require("process");
-const https = require("https");
+const https = require("follow-redirects").https;
 const execSync = require("child_process").execSync;
 const spawnSync = require("child_process").spawnSync;
 
@@ -125,16 +125,29 @@ if (isMac()) {
     // Download file via JS
     const url = `${mirror}/MariaDB/mariadb-${fullVersion}/winx64-packages/mariadb-${fullVersion}-winx64.msi`;
     const file = fs.createWriteStream(targetPath);
+    const options = {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:89.0) Gecko/20100101 Firefox/89.0",
+      },
+    };
+
     https
-      .get(url, function (response) {
+      .get(url, options, function (response) {
         console.log("status code:", response.statusCode);
         response.pipe(file);
+        file.on("finish", () => {
+          file.close(() => {
+            console.log("File downloaded successfully");
+          });
+        });
       })
       .on("error", (err) => {
         console.log("Error: " + err.message);
       });
   }
   // run(`msiexec /i mariadb.msi SERVICENAME=MariaDB /qn`);
+  run(`ls .cache -alR`);
   run(`msiexec /i "${targetPath}" SERVICENAME=MariaDB /qn`);
 
   bin = `C:\\Program Files\\MariaDB ${mariadbVersion}\\bin`;

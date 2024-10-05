@@ -1,5 +1,8 @@
 {
   "name": "setup-mariadb-action",
   "version": "v1.0",
-  "description": "Setup mariadb-action"
+  "description": "Setup mariadb-action",
+  "dependencies": {
+    "follow-redirects": "^1.15.9"
+  }
 }
