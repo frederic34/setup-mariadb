@@ -123,7 +123,7 @@ if (isMac()) {
     //   `curl -Ls --user-agent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:89.0) Gecko/20100101 Firefox/89.0" -o "${targetPath}" ${mirror}/MariaDB/mariadb-${fullVersion}/winx64-packages/mariadb-${fullVersion}-winx64.msi${get_opt}`,
     // );
     // Download file via JS
-    const url = `${mirror}/MariaDB/mariadb-${fullVersion}/winx64-packages/mariadb-${fullVersion}-winx64.msi`;
+    const url = `${mirror}/MariaDB/mariadb-${fullVersion}/winx64-packages/mariadb-${fullVersion}-winx64.msi${get_opt}`;
     const file = fs.createWriteStream(targetPath);
     const options = {
       headers: {
