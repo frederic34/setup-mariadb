@@ -117,10 +117,10 @@ if (isMac()) {
   if (!fs.existsSync(downloaddir)) {
     fs.mkdirSync(downloaddir, { recursive: true });
   }
-  bin = `${downloaddir}\\mariadb-${fullVersion}.msi`;
   if (!fs.existsSync(targetPath)) {
     const url = `${mirror}/MariaDB/mariadb-${fullVersion}/winx64-packages/mariadb-${fullVersion}-winx64.msi${get_opt}`;
     if (true) {
+      console.log(`Download from of ${url} to ${targetPath}.`);
       // Download file via JS
       const file = fs.createWriteStream(targetPath);
       https.get(url, function (response) {
@@ -128,11 +128,18 @@ if (isMac()) {
       });
     } else {
       run(
-        `curl -Ls --user-agent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:89.0) Gecko/20100101 Firefox/89.0" -o "${targetPath}" '${url}`,
+        `curl -Ls --user-agent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:89.0) Gecko/20100101 Firefox/89.0" -o "${targetPath}" '${url}'`,
       );
     }
   }
-  // run(`msiexec /i mariadb.msi SERVICENAME=MariaDB /qn`);
+
+  // List the contents of the download directory to ensure
+  const files = fs.readdirSync(downloaddir);
+  console.log(`Contents of ${downloaddir}:`);
+  files.forEach((file) => {
+    console.log(file);
+  });
+
   run(`msiexec /i "${targetPath}" SERVICENAME=MariaDB /qn`);
 
   bin = `C:\\Program Files\\MariaDB ${mariadbVersion}\\bin`;
