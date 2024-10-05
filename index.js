@@ -127,6 +127,7 @@ if (isMac()) {
     const file = fs.createWriteStream(targetPath);
     https
       .get(url, function (response) {
+        console.log("status code:", response.statusCode);
         response.pipe(file);
       })
       .on("error", (err) => {
