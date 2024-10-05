@@ -1,77 +1,89 @@
+---
 name: build
 on: [push, pull_request]
 jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
-        include:
-          - os: ubuntu-24.04
-            mariadb-version: 11.4
-          - os: ubuntu-24.04
-            mariadb-version: 10.11
+        # Limiting to a few versions only, testing flow, not available versions!
+        os:
+          - ubuntu-24.04
+          - ubuntu-22.04
+          - ubuntu-20.04
+          - macos-14
+          - macos-13
+          - macos-12
+          - windows-2022
+          - windows-2019
+        mariadb-version:
+          [10.11]
+          # include:
+          # - os: ubuntu-24.04
+          #   mariadb-version: 11.4
+          # - os: ubuntu-24.04
+          #   mariadb-version: 10.11
+          # - os: ubuntu-22.04
+          #   mariadb-version: 11.4
+          # - os: ubuntu-22.04
+          #   mariadb-version: 10.11
+          # - os: ubuntu-22.04
+          #   mariadb-version: 10.6
 
-          - os: ubuntu-22.04
-            mariadb-version: 11.4
-          - os: ubuntu-22.04
-            mariadb-version: 10.11
-          - os: ubuntu-22.04
-            mariadb-version: 10.6
+          # - os: ubuntu-20.04
+          #   mariadb-version: 11.4
+          # - os: ubuntu-20.04
+          #   mariadb-version: 10.11
+          # - os: ubuntu-20.04
+          #   mariadb-version: 10.6
+          # - os: ubuntu-20.04
+          #   mariadb-version: 10.5
 
-          - os: ubuntu-20.04
-            mariadb-version: 11.4
-          - os: ubuntu-20.04
-            mariadb-version: 10.11
-          - os: ubuntu-20.04
-            mariadb-version: 10.6
-          - os: ubuntu-20.04
-            mariadb-version: 10.5
+          # - os: macos-14
+          #   mariadb-version: 11.4
+          # - os: macos-14
+          #   mariadb-version: 10.11
+          # - os: macos-14
+          #   mariadb-version: 10.6
+          # - os: macos-14
+          #   mariadb-version: 10.5
 
-          - os: macos-14
-            mariadb-version: 11.4
-          - os: macos-14
-            mariadb-version: 10.11
-          - os: macos-14
-            mariadb-version: 10.6
-          - os: macos-14
-            mariadb-version: 10.5
+          # - os: macos-13
+          #   mariadb-version: 11.4
+          # - os: macos-13
+          #   mariadb-version: 10.11
+          # - os: macos-13
+          #   mariadb-version: 10.6
+          # - os: macos-13
+          #   mariadb-version: 10.5
 
-          - os: macos-13
-            mariadb-version: 11.4
-          - os: macos-13
-            mariadb-version: 10.11
-          - os: macos-13
-            mariadb-version: 10.6
-          - os: macos-13
-            mariadb-version: 10.5
+          # - os: macos-12
+          #   mariadb-version: 11.4
+          # - os: macos-12
+          #   mariadb-version: 10.11
+          # - os: macos-12
+          #   mariadb-version: 10.6
+          # - os: macos-12
+          #   mariadb-version: 10.5
 
-          - os: macos-12
-            mariadb-version: 11.4
-          - os: macos-12
-            mariadb-version: 10.11
-          - os: macos-12
-            mariadb-version: 10.6
-          - os: macos-12
-            mariadb-version: 10.5
+          # - os: windows-2022
+          #   mariadb-version: 11.4
+          # - os: windows-2022
+          #   mariadb-version: 10.11
+          # - os: windows-2022
+          #   mariadb-version: 10.6
+          # - os: windows-2022
+          #   mariadb-version: 10.5
 
-          - os: windows-2022
-            mariadb-version: 11.4
-          - os: windows-2022
-            mariadb-version: 10.11
-          - os: windows-2022
-            mariadb-version: 10.6
-          - os: windows-2022
-            mariadb-version: 10.5
-
-          - os: windows-2019
-            mariadb-version: 11.4
-          - os: windows-2019
-            mariadb-version: 10.11
-          - os: windows-2019
-            mariadb-version: 10.6
-          - os: windows-2019
-            mariadb-version: 10.5
+          # - os: windows-2019
+          #   mariadb-version: 11.4
+          # - os: windows-2019
+          #   mariadb-version: 10.11
+          # - os: windows-2019
+          #   mariadb-version: 10.6
+          # - os: windows-2019
+          #   mariadb-version: 10.5
     steps:
       - uses: actions/checkout@v4
       - uses: ./.
