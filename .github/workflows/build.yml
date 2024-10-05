@@ -74,6 +74,7 @@ jobs:
             mariadb-version: 10.5
     steps:
       - uses: actions/checkout@v4
+      - run: npm update
       - uses: ./.
         with:
           mariadb-version: ${{ matrix.mariadb-version }}
